@@ -1,39 +1,21 @@
-const qrcode = require('qrcode-terminal');
-const { Client } = require('whatsapp-web.js');
-const express = require('express');
-const bodyParser = require('body-parser');
-const app = express();
-app.use(bodyParser.json());
+const { Client, LocalAuth } = require("whatsapp-web.js");
+const qrcode = require("qrcode-terminal");
 
-const client = new Client();
-
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
-    console.log("📲 Escanea este código QR con tu WhatsApp Business (número de Venta Fácil).");
+const client = new Client({
+  authStrategy: new LocalAuth(),
+  puppeteer: {
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  },
 });
 
-client.on('ready', () => {
-    console.log('🤖 Bot conectado y listo para atender leads.');
+client.on("qr", (qr) => {
+  console.log("📲 Escanea este código QR con tu WhatsApp Business (número de Venta Fácil).");
+  qrcode.generate(qr, { small: true });
 });
 
-client.on('message', async msg => {
-    const content = msg.body;
-    const from = msg.from;
-
-    fetch('https://blumencorp.app.n8n.cloud/webhook/venta-facil-leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            telefono: from,
-            mensaje: content
-        })
-    });
-
-    msg.reply('Gracias por escribirnos 👋. Estamos procesando tu solicitud. Pronto recibirás una respuesta personalizada.');
+client.on("ready", () => {
+  console.log("✅ Bot de Venta Fácil conectado y listo para usar.");
 });
 
 client.initialize();
-
-app.get("/", (_, res) => res.send("Bot de Venta Fácil activo."));
-app.listen(3000, () => console.log("Servidor en puerto 3000"));
-
